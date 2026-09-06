@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Публичная интерактивная демонстрация интерфейса сопоставления рынков.">
+  <title>Разница — публичное демо</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">К основному содержанию</a>
+
+  <header class="topbar">
+    <a class="brand" href="#scanner" aria-label="Разница — на главную">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M6 7h8v18H6zM18 7h8v8h-8zM18 19h8v6h-8z" fill="currentColor"/>
+      </svg>
+      <span class="brand-name">РАЗНИЦА</span>
+      <span class="brand-tag">market matcher</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Основная навигация">
+      <button class="nav-button is-active" type="button" data-nav="scanner">Сканер</button>
+      <button class="nav-button" type="button" data-nav="feed">Совпадения <span class="nav-count" id="match-count">—</span></button>
+      <button class="nav-button" type="button" data-nav="method">Как считаем</button>
+    </nav>
+
+    <div class="sync-status" aria-label="Статус источников">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span><strong id="source-status">Демо-режим</strong><small id="sync-time">локальный snapshot · без API</small></span>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="scanner" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">СОПОСТАВЛЕНИЕ РЫНКОВ / PUBLIC DEMO</p>
+        <h1 id="page-title">Выбери событие.<br><span>Мы найдём вторую сторону.</span></h1>
+      </div>
+      <div class="hero-note">
+        <span class="note-index">01</span>
+        <p>Сначала задайте точный исход у букмекера. Затем проверьте найденный рынок и условия расчёта.</p>
+      </div>
+    </section>
+
+    <section class="matcher-shell" aria-label="Сопоставление события">
+      <div class="platform-row">
+        <div class="platform-control">
+          <label for="left-platform">Откуда берём событие</label>
+          <div class="select-wrap">
+            <span class="platform-glyph platform-glyph--w" aria-hidden="true">W</span>
+            <select id="left-platform">
+              <option value="winline">Winline</option>
+              <option value="betboom" disabled>BetBoom — позже</option>
+            </select>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+          </div>
+        </div>
+
+        <div class="mode-badge" aria-label="Автоматическое сопоставление включено">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h14M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Автопоиск включён
+        </div>
+
+        <div class="platform-control platform-control--right">
+          <label for="right-platform">Где ищем хедж</label>
+          <div class="select-wrap">
+            <span class="platform-glyph platform-glyph--p" id="right-glyph" aria-hidden="true">P</span>
+            <select id="right-platform">
+              <option value="polymarket">Polymarket</option>
+              <option value="kalshi" disabled>Kalshi — позже</option>
+            </select>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="match-grid">
+        <section class="source-panel" aria-labelledby="source-title">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-kicker">ЯКОРНОЕ СОБЫТИЕ</span>
+              <h2 id="source-title">Линия Winline</h2>
+            </div>
+            <span class="feed-chip"><span class="status-dot" aria-hidden="true"></span> Demo snapshot</span>
+          </div>
+
+          <div class="step-trail" id="step-trail" aria-label="Выбранный путь"></div>
+          <div class="stage" id="source-stage" aria-live="polite"></div>
+        </section>
+
+        <div class="match-rail" aria-hidden="true">
+          <span class="rail-line"></span>
+          <span class="rail-lock">
+            <svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+          </span>
+          <span class="rail-score" id="rail-score">—</span>
+        </div>
+
+        <section class="target-panel" aria-labelledby="target-title">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-kicker">ВСТРЕЧНЫЙ РЫНОК</span>
+              <h2 id="target-title">Найдено автоматически</h2>
+            </div>
+            <button class="icon-button" id="refresh-match" type="button" aria-label="Повторить поиск">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.2A7 7 0 0 1 18.5 7M17.9 15.8A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div id="match-results" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="arb-card" id="arb-card" aria-labelledby="arb-title">
+      <div class="arb-heading">
+        <div>
+          <p class="eyebrow eyebrow--dark">ДЕМО-РАСЧЁТ ПО SNAPSHOT</p>
+          <h2 id="arb-title">Вилка готова к проверке</h2>
+        </div>
+        <div class="live-price"><span class="status-dot" aria-hidden="true"></span> локальный snapshot <strong id="countdown">DEMO</strong></div>
+      </div>
+
+      <div class="calculator-grid">
+        <div class="capital-block">
+          <label for="capital-input">Капитал</label>
+          <div class="money-input">
+            <input id="capital-input" type="text" inputmode="numeric" value="100" aria-describedby="capital-help">
+            <span>ед.</span>
+          </div>
+          <p id="capital-help">Расчёт без комиссий и конвертации валют</p>
+          <div class="quick-amounts" aria-label="Быстрый выбор капитала">
+            <button type="button" data-amount="100" class="is-active">100</button>
+            <button type="button" data-amount="500">500</button>
+            <button type="button" data-amount="1000">1 000</button>
+          </div>
+        </div>
+
+        <div class="legs-block">
+          <article class="leg-row">
+            <div class="leg-platform"><span class="platform-glyph platform-glyph--w" id="calc-left-glyph">W</span><span id="calc-left-name">Winline<small id="left-outcome">—</small></span></div>
+            <div class="leg-price"><small>Коэффициент</small><strong id="left-odds">—</strong></div>
+            <div class="leg-stake"><small>Доля капитала</small><strong id="left-stake">—</strong></div>
+          </article>
+          <article class="leg-row">
+            <div class="leg-platform"><span class="platform-glyph platform-glyph--p" id="calc-right-glyph">P</span><span id="calc-right-name">Polymarket<small id="right-outcome">—</small></span></div>
+            <div class="leg-price"><small id="right-price-label">Средняя цена</small><strong id="right-price">—</strong></div>
+            <div class="leg-stake"><small>Доля капитала</small><strong id="right-stake">—</strong></div>
+          </article>
+          <div class="payout-line"><span>Выплата в каждом сценарии</span><strong id="equal-payout">—</strong></div>
+        </div>
+
+        <div class="profit-block">
+          <span class="profit-label">Доходность до расходов</span>
+          <strong class="profit-value" id="profit-percent">—</strong>
+          <span class="profit-money" id="profit-money">реальный стакан</span>
+          <div class="profit-meta"><span id="price-source-chip">Snapshot depth</span><span id="liquidity-chip">демо-объём</span></div>
+          <button class="primary-button" id="build-position" type="button">Открыть площадки</button>
+        </div>
+      </div>
+
+      <button class="rules-toggle" id="rules-toggle" type="button" aria-expanded="false" aria-controls="rules-panel">
+        <span>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-11v4m0 3h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          Перед ставкой сравните правила расчёта
+        </span>
+        <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+      <div class="rules-panel" id="rules-panel" hidden></div>
+    </section>
+
+    <section class="concept-note" aria-label="Логика концепта">
+      <p class="eyebrow">ПОЧЕМУ ТАК</p>
+      <div class="concept-grid">
+        <h2>Пользователь выбирает только то, что знает точно.</h2>
+        <div>
+          <p>Иерархия слева задаёт источник правды. Справа мы не просим проходить тот же путь второй раз — показываем кандидатов и объясняем, почему считаем их совпадением.</p>
+          <p>Ручной выбор нужен только тогда, когда алгоритм не уверен.</p>
+          <p class="risk-note">Публичная демонстрация использует вымышленные локальные данные и не подключается к API. Расчёт не является финансовой рекомендацией.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="position-dialog" id="position-dialog" aria-labelledby="dialog-title">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+      <p class="eyebrow">СИМУЛЯЦИЯ</p>
+      <h2 id="dialog-title">Проверьте цены на площадках</h2>
+      <p>Мы ничего не размещаем. Откройте обе площадки и убедитесь, что цена и доступный объём не изменились.</p>
+      <div class="dialog-summary">
+        <span>Расчётная разница</span><strong id="dialog-profit">—</strong>
+      </div>
+      <div class="dialog-links">
+        <a class="primary-button primary-button--link" id="dialog-winline-link" href="https://winline.ru" target="_blank" rel="noreferrer">Открыть Winline</a>
+        <a class="secondary-button" id="dialog-poly-link" href="https://polymarket.com" target="_blank" rel="noreferrer">Открыть Polymarket</a>
+      </div>
+      <button class="dialog-dismiss" value="cancel">Закрыть</button>
+    </form>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>
