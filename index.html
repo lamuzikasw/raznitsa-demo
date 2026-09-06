@@ -3,26 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Публичная интерактивная демонстрация интерфейса сопоставления рынков.">
+  <meta name="description" content="Публичная интерактивная демонстрация интерфейса сопоставления рынков на вымышленных локальных данных.">
   <title>Разница — публичное демо</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <a class="skip-link" href="#main-content">К основному содержанию</a>
 
   <header class="topbar">
-    <a class="brand" href="#scanner" aria-label="Разница — на главную">
+    <a class="brand" href="#opportunities" data-brand-nav aria-label="Разница — на главную">
       <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
         <path d="M6 7h8v18H6zM18 7h8v8h-8zM18 19h8v6h-8z" fill="currentColor"/>
       </svg>
       <span class="brand-name">РАЗНИЦА</span>
-      <span class="brand-tag">market matcher</span>
+      <span class="brand-tag">market x-ray</span>
     </a>
 
     <nav class="main-nav" aria-label="Основная навигация">
-      <button class="nav-button is-active" type="button" data-nav="scanner">Сканер</button>
-      <button class="nav-button" type="button" data-nav="feed">Совпадения <span class="nav-count" id="match-count">—</span></button>
-      <button class="nav-button" type="button" data-nav="method">Как считаем</button>
+      <button class="nav-button is-active" type="button" data-nav="opportunities">Радар <span class="nav-count" data-radar-count>—</span></button>
+      <button class="nav-button" type="button" data-nav="finder">Собрать пару</button>
+      <button class="nav-button" type="button" data-nav="watch">На прицеле</button>
+      <button class="nav-button" type="button" data-nav="method">Без магии</button>
     </nav>
 
     <div class="sync-status" aria-label="Статус источников">
@@ -32,23 +36,75 @@
   </header>
 
   <main id="main-content">
-    <section class="hero" id="scanner" aria-labelledby="page-title">
+    <nav class="section-nav" aria-label="Разделы сервиса">
+      <button class="section-nav-button is-active" type="button" data-nav="opportunities">Радар <span data-radar-count>—</span></button>
+      <button class="section-nav-button" type="button" data-nav="finder">Собрать пару</button>
+      <button class="section-nav-button" type="button" data-nav="watch">На прицеле</button>
+      <button class="section-nav-button" type="button" data-nav="method">Без магии</button>
+    </nav>
+
+    <section class="opportunities-view" id="opportunities" data-view="opportunities" aria-labelledby="opportunities-title">
+      <div class="scanner-hero">
+        <div>
+          <p class="eyebrow">РАДАР РАСХОЖДЕНИЙ / PREMATCH</p>
+          <h1 id="opportunities-title">Рынки спорят.<br><span>Мы считаем.</span></h1>
+          <p class="scanner-intro"><strong id="scanner-verdict">Сейчас без вилок. И это честно.</strong><span>Совпавшее событие — ещё не деньги. Мы читаем стакан, расходы и правила до того, как назвать окно возможностью.</span></p>
+          <p class="scanner-source"><img class="inline-platform-logo" src="./assets/winline.svg" alt=""> ЛИНИЯ WINLINE <b>×</b> <img class="inline-platform-logo" src="./assets/polymarket.svg" alt=""> СТАКАН POLYMARKET · ЛОКАЛЬНЫЙ SNAPSHOT</p>
+        </div>
+        <div class="scanner-kpis" aria-label="Состояние сканера">
+          <div class="kpi-hot"><span>Окно открыто</span><strong id="scanner-arb-count">—</strong><small>прошли всё</small></div>
+          <div><span>Математика есть</span><strong id="scanner-potential-count">—</strong><small>правила — ещё нет</small></div>
+          <div><span>Рынки совпали</span><strong id="scanner-match-count">—</strong><small>по событию</small></div>
+          <div><span>Стаканы прочитаны</span><strong id="scanner-book-count">—</strong><small>ask + глубина</small></div>
+          <p class="scanner-funnel" id="scanner-funnel">Совпадения → стаканы → чистый край</p>
+        </div>
+      </div>
+
+      <section class="scanner-board" aria-label="Лента найденных возможностей">
+        <div class="scanner-toolbar">
+          <div class="feed-filters" role="group" aria-label="Фильтр возможностей">
+            <button class="filter-chip is-active" type="button" data-feed-filter="all">Все расчёты</button>
+            <button class="filter-chip" type="button" data-feed-filter="potential">Математика есть</button>
+            <button class="filter-chip" type="button" data-feed-filter="executable">Окно открыто</button>
+            <button class="filter-chip" type="button" data-feed-filter="stale">Протухшие</button>
+          </div>
+          <div class="scanner-controls">
+            <label class="compact-select">Спорт
+              <select id="opportunity-sport"><option value="all">Все виды</option></select>
+            </label>
+            <button class="economy-trigger" type="button" data-economy-open>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M10 17H4M14 17h6M14 4v6M10 14v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              <span>Что съедает край<strong data-economy-summary>RUB · расходы · buffer 1,5%</strong></span>
+            </button>
+            <button class="scan-refresh" id="refresh-opportunities" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.2A7 7 0 0 1 18.5 7M17.9 15.8A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              Пересчитать
+            </button>
+          </div>
+        </div>
+        <div class="feed-head" aria-hidden="true"><span>Вердикт</span><span>Две стороны</span><span>Исполнение</span><span>Почему</span></div>
+        <div class="opportunity-list" id="opportunity-list" aria-live="polite"></div>
+        <p class="scanner-disclaimer"><strong>Публичное демо: все события и цены вымышлены.</strong> В репозитории нет API, сетевых коннекторов и production-данных. Расчёт не является гарантией дохода.</p>
+      </section>
+    </section>
+
+    <section class="hero" id="scanner" data-view="finder" hidden aria-labelledby="page-title">
       <div class="hero-copy">
-        <p class="eyebrow">СОПОСТАВЛЕНИЕ РЫНКОВ / PUBLIC DEMO</p>
-        <h1 id="page-title">Выбери событие.<br><span>Мы найдём вторую сторону.</span></h1>
+        <p class="eyebrow">РУЧНАЯ СБОРКА / 4 ШАГА</p>
+        <h1 id="page-title">Дай нам матч.<br><span>Вторую сторону найдём сами.</span></h1>
       </div>
       <div class="hero-note">
         <span class="note-index">01</span>
-        <p>Сначала задайте точный исход у букмекера. Затем проверьте найденный рынок и условия расчёта.</p>
+        <p>Ты выбираешь исход. Мы проверяем цену, стакан и правила. Без магии и красивых обещаний.</p>
       </div>
     </section>
 
-    <section class="matcher-shell" aria-label="Сопоставление события">
+    <section class="matcher-shell" data-view="finder" hidden aria-label="Сопоставление события">
       <div class="platform-row">
         <div class="platform-control">
-          <label for="left-platform">Откуда берём событие</label>
+          <label for="left-platform">Берём линию</label>
           <div class="select-wrap">
-            <span class="platform-glyph platform-glyph--w" aria-hidden="true">W</span>
+            <span class="platform-glyph platform-glyph--w" aria-hidden="true"><img src="./assets/winline.svg" alt=""></span>
             <select id="left-platform">
               <option value="winline">Winline</option>
               <option value="betboom" disabled>BetBoom — позже</option>
@@ -59,13 +115,13 @@
 
         <div class="mode-badge" aria-label="Автоматическое сопоставление включено">
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h14M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-          Автопоиск включён
+          Радар включён
         </div>
 
         <div class="platform-control platform-control--right">
-          <label for="right-platform">Где ищем хедж</label>
+          <label for="right-platform">Ищем ответ</label>
           <div class="select-wrap">
-            <span class="platform-glyph platform-glyph--p" id="right-glyph" aria-hidden="true">P</span>
+            <span class="platform-glyph platform-glyph--p" id="right-glyph" aria-hidden="true"><img src="./assets/polymarket.svg" alt=""></span>
             <select id="right-platform">
               <option value="polymarket">Polymarket</option>
               <option value="kalshi" disabled>Kalshi — позже</option>
@@ -79,7 +135,7 @@
         <section class="source-panel" aria-labelledby="source-title">
           <div class="panel-heading">
             <div>
-              <span class="panel-kicker">ЯКОРНОЕ СОБЫТИЕ</span>
+              <span class="panel-kicker">СТОРОНА 01 / БУКМЕКЕР</span>
               <h2 id="source-title">Линия Winline</h2>
             </div>
             <span class="feed-chip"><span class="status-dot" aria-hidden="true"></span> Demo snapshot</span>
@@ -100,8 +156,8 @@
         <section class="target-panel" aria-labelledby="target-title">
           <div class="panel-heading">
             <div>
-              <span class="panel-kicker">ВСТРЕЧНЫЙ РЫНОК</span>
-              <h2 id="target-title">Найдено автоматически</h2>
+              <span class="panel-kicker">СТОРОНА 02 / PREDICTION MARKET</span>
+              <h2 id="target-title">Нашли кандидатов</h2>
             </div>
             <button class="icon-button" id="refresh-match" type="button" aria-label="Повторить поиск">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.2A7 7 0 0 1 18.5 7M17.9 15.8A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -113,92 +169,169 @@
       </div>
     </section>
 
-    <section class="arb-card" id="arb-card" aria-labelledby="arb-title">
+    <section class="arb-card" id="arb-card" data-view="finder" hidden aria-labelledby="arb-title">
       <div class="arb-heading">
         <div>
-          <p class="eyebrow eyebrow--dark">ДЕМО-РАСЧЁТ ПО SNAPSHOT</p>
-          <h2 id="arb-title">Вилка готова к проверке</h2>
+          <p class="eyebrow eyebrow--dark">ЦЕНЫ ВСКРЫТЫ / СТАКАН ПРОЧИТАН</p>
+          <h2 id="arb-title">Вердикт готов</h2>
         </div>
         <div class="live-price"><span class="status-dot" aria-hidden="true"></span> локальный snapshot <strong id="countdown">DEMO</strong></div>
       </div>
 
+      <div class="trust-verdict" id="trust-verdict" aria-live="polite"></div>
+
       <div class="calculator-grid">
         <div class="capital-block">
-          <label for="capital-input">Капитал</label>
+          <label for="capital-input">Капитал в базовой валюте</label>
           <div class="money-input">
-            <input id="capital-input" type="text" inputmode="numeric" value="100" aria-describedby="capital-help">
-            <span>ед.</span>
+            <input id="capital-input" type="text" inputmode="numeric" value="10 000" aria-describedby="capital-help">
+            <span id="capital-currency">₽</span>
           </div>
-          <p id="capital-help">Расчёт без комиссий и конвертации валют</p>
+          <p id="capital-help">Глубина и расходы учитываются в расчёте</p>
           <div class="quick-amounts" aria-label="Быстрый выбор капитала">
-            <button type="button" data-amount="100" class="is-active">100</button>
-            <button type="button" data-amount="500">500</button>
-            <button type="button" data-amount="1000">1 000</button>
+            <button type="button" data-amount="5000">5 000</button>
+            <button type="button" data-amount="10000" class="is-active">10 000</button>
+            <button type="button" data-amount="25000">25 000</button>
           </div>
+          <button class="economy-inline-button" type="button" data-economy-open>Настроить курс и расходы →</button>
         </div>
 
         <div class="legs-block">
           <article class="leg-row">
-            <div class="leg-platform"><span class="platform-glyph platform-glyph--w" id="calc-left-glyph">W</span><span id="calc-left-name">Winline<small id="left-outcome">—</small></span></div>
+            <div class="leg-platform"><span class="platform-glyph platform-glyph--w" id="calc-left-glyph" aria-hidden="true"><img src="./assets/winline.svg" alt=""></span><span id="calc-left-name">Winline<small id="left-outcome">—</small></span></div>
             <div class="leg-price"><small>Коэффициент</small><strong id="left-odds">—</strong></div>
             <div class="leg-stake"><small>Доля капитала</small><strong id="left-stake">—</strong></div>
           </article>
           <article class="leg-row">
-            <div class="leg-platform"><span class="platform-glyph platform-glyph--p" id="calc-right-glyph">P</span><span id="calc-right-name">Polymarket<small id="right-outcome">—</small></span></div>
+            <div class="leg-platform"><span class="platform-glyph platform-glyph--p" id="calc-right-glyph" aria-hidden="true"><img src="./assets/polymarket.svg" alt=""></span><span id="calc-right-name">Polymarket<small id="right-outcome">—</small></span></div>
             <div class="leg-price"><small id="right-price-label">Средняя цена</small><strong id="right-price">—</strong></div>
             <div class="leg-stake"><small>Доля капитала</small><strong id="right-stake">—</strong></div>
           </article>
-          <div class="payout-line"><span>Выплата в каждом сценарии</span><strong id="equal-payout">—</strong></div>
+          <div class="payout-line"><span>Расчётная выплата при исполнении</span><strong id="equal-payout">—</strong></div>
         </div>
 
         <div class="profit-block">
-          <span class="profit-label">Доходность до расходов</span>
+          <span class="profit-label">Теоретическая доходность</span>
           <strong class="profit-value" id="profit-percent">—</strong>
-          <span class="profit-money" id="profit-money">реальный стакан</span>
-          <div class="profit-meta"><span id="price-source-chip">Snapshot depth</span><span id="liquidity-chip">демо-объём</span></div>
-          <button class="primary-button" id="build-position" type="button">Открыть площадки</button>
+          <span class="profit-money" id="profit-money">до расходов</span>
+          <div class="net-result">
+            <span>Ожидаемая чистая</span>
+            <strong id="net-profit-percent">—</strong>
+            <small id="net-profit-money">с учётом расходов</small>
+          </div>
+          <div class="profit-meta"><span id="expense-chip">расходы —</span><span id="safety-chip">buffer 1,5%</span><span id="liquidity-chip">проверяем объём</span></div>
+          <button class="primary-button" id="build-position" type="button">Открыть обе стороны</button>
         </div>
       </div>
 
       <button class="rules-toggle" id="rules-toggle" type="button" aria-expanded="false" aria-controls="rules-panel">
         <span>
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-11v4m0 3h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          Перед ставкой сравните правила расчёта
+          Вскрыть формулу, признаки и правила
         </span>
         <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
       <div class="rules-panel" id="rules-panel" hidden></div>
     </section>
 
-    <section class="concept-note" aria-label="Логика концепта">
-      <p class="eyebrow">ПОЧЕМУ ТАК</p>
+    <section class="watch-view" data-view="watch" hidden aria-labelledby="watch-title">
+      <p class="eyebrow">НА ПРИЦЕЛЕ</p>
+      <div class="watch-card">
+        <span class="watch-index">00</span>
+        <div><h1 id="watch-title">Пока никого. Радар чист.</h1><p>Сохрани событие — будем следить за ценой и подадим сигнал, когда математика перестанет спорить.</p></div>
+        <button class="secondary-action" type="button" data-nav="opportunities">Вернуться на радар</button>
+      </div>
+    </section>
+
+    <section class="concept-note" data-view="method" hidden aria-label="Логика концепта">
+      <p class="eyebrow">БЕЗ МАГИИ / ТОЛЬКО МЕХАНИКА</p>
       <div class="concept-grid">
-        <h2>Пользователь выбирает только то, что знает точно.</h2>
+        <h2>Каждый процент назван. Каждый вывод можно проверить.</h2>
         <div>
-          <p>Иерархия слева задаёт источник правды. Справа мы не просим проходить тот же путь второй раз — показываем кандидатов и объясняем, почему считаем их совпадением.</p>
-          <p>Ручной выбор нужен только тогда, когда алгоритм не уверен.</p>
-          <p class="risk-note">Публичная демонстрация использует вымышленные локальные данные и не подключается к API. Расчёт не является финансовой рекомендацией.</p>
+          <p>Линия букмекера задаёт одну сторону. Стакан prediction market — вторую. Мы не склеиваем их молча: команды, время, формат, цена и глубина проверяются отдельно.</p>
+          <p>Если денег в расхождении нет, интерфейс так и говорит. Хороший радар не обязан всегда пищать.</p>
+          <p class="risk-note">Расчёт информационный и не гарантирует доход: цены и доступный объём меняются, а комиссии, спред, конвертация, лимиты аккаунта и различия правил могут убрать положительную разницу.</p>
         </div>
       </div>
+      <div class="method-economy" aria-label="Формула доходности">
+        <article><span>01 / ТЕОРИЯ</span><strong>Выплата ÷ сумма ставок − 1</strong><p>Используем среднюю исполнимую цену по уровням стакана, а не только лучший ask.</p></article>
+        <article><span>02 / ЧИСТЫЙ РЕЗУЛЬТАТ</span><strong>Теория − расходы − округление</strong><p>Учитываем конвертацию, ввод, вывод, комиссии площадок и резерв движения цены.</p></article>
+        <article><span>03 / ДОПУСК</span><strong>Чистая доходность ≥ safety buffer</strong><p>Статус требует также свежих цен, минимального ордера, глубины и совместимых правил.</p></article>
+      </div>
+      <button class="secondary-action method-economy-button" type="button" data-economy-open>Покрутить экономику</button>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog class="economy-dialog" id="economy-dialog" aria-labelledby="economy-dialog-title">
+    <form method="dialog" class="economy-form">
+      <button class="dialog-close" value="cancel" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+      <p class="eyebrow">ГДЕ СЪЕДАЕТСЯ РАЗНИЦА</p>
+      <h2 id="economy-dialog-title">Ни один расход не спрячется</h2>
+      <p class="economy-intro">Настрой допущения публичной симуляции. Значения не являются тарифами площадок и не загружаются из внешних источников.</p>
+
+      <section class="economy-section" aria-labelledby="currency-title">
+        <div class="economy-section-heading"><span>01</span><div><h3 id="currency-title">Валюта и курс</h3><p id="fx-source">Демонстрационный курс · локально</p></div></div>
+        <div class="economy-field-grid economy-field-grid--two">
+          <label>Базовая валюта
+            <select data-economy-field="baseCurrency">
+              <option value="RUB">RUB · российский рубль</option>
+              <option value="USDC">USDC</option>
+            </select>
+          </label>
+          <label>1 USDC в RUB
+            <input type="number" min="1" step="0.01" inputmode="decimal" data-economy-field="rubPerUsdc" value="90">
+          </label>
+        </div>
+      </section>
+
+      <section class="economy-section" aria-labelledby="costs-title">
+        <div class="economy-section-heading"><span>02</span><div><h3 id="costs-title">Расходы</h3><p>Редактируемые допущения для вашего способа исполнения.</p></div></div>
+        <div class="economy-field-grid">
+          <label>Конвертация RUB → USDC <span>% от хеджа</span><input type="number" min="0" max="20" step="0.05" inputmode="decimal" data-economy-field="conversionFee" data-economy-kind="percent" value="0.5"></label>
+          <label>Ввод средств <span>% от капитала</span><input type="number" min="0" max="20" step="0.05" inputmode="decimal" data-economy-field="depositFee" data-economy-kind="percent" value="0"></label>
+          <label>Вывод средств <span>% от выплаты</span><input type="number" min="0" max="20" step="0.05" inputmode="decimal" data-economy-field="withdrawalFee" data-economy-kind="percent" value="0"></label>
+          <label>Winline <span>% от ставки</span><input type="number" min="0" max="20" step="0.05" inputmode="decimal" data-economy-field="winlineFee" data-economy-kind="percent" value="0"></label>
+          <label>Polymarket <span>% от ордера</span><input type="number" min="0" max="20" step="0.05" inputmode="decimal" data-economy-field="polymarketFee" data-economy-kind="percent" value="0"></label>
+          <label>Резерв движения цены <span>% от капитала</span><input type="number" min="0" max="20" step="0.05" inputmode="decimal" data-economy-field="priceMoveReserve" data-economy-kind="percent" value="0.75"></label>
+        </div>
+      </section>
+
+      <section class="economy-section" aria-labelledby="execution-title">
+        <div class="economy-section-heading"><span>03</span><div><h3 id="execution-title">Ограничения исполнения</h3><p>Округление и минимальный ордер могут убрать преимущество на небольшой сумме.</p></div></div>
+        <div class="economy-field-grid economy-field-grid--three">
+          <label>Шаг ставки Winline <span>RUB</span><input type="number" min="0.01" step="0.01" inputmode="decimal" data-economy-field="bookmakerRoundingRub" value="1"></label>
+          <label>Мин. ордер Polymarket <span>USDC</span><input type="number" min="0" step="0.1" inputmode="decimal" data-economy-field="polymarketMinOrderUsdc" value="5"></label>
+          <label>Safety buffer <span>чистый порог, %</span><input type="number" min="0" max="20" step="0.1" inputmode="decimal" data-economy-field="safetyBuffer" data-economy-kind="percent" value="1.5"></label>
+        </div>
+      </section>
+
+      <div class="economy-model-summary">
+        <span>Допуск к статусу «Исполнимая»</span>
+        <strong id="economy-threshold-summary">Чистая доходность ≥ 1,50%</strong>
+        <small>Плюс свежая цена, достаточная глубина, минимальный ордер и совпадающие правила.</small>
+      </div>
+      <button class="primary-button economy-apply" value="confirm">Пересчитать без иллюзий</button>
+    </form>
+  </dialog>
 
   <dialog class="position-dialog" id="position-dialog" aria-labelledby="dialog-title">
     <form method="dialog">
       <button class="dialog-close" value="cancel" aria-label="Закрыть">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
-      <p class="eyebrow">СИМУЛЯЦИЯ</p>
-      <h2 id="dialog-title">Проверьте цены на площадках</h2>
-      <p>Мы ничего не размещаем. Откройте обе площадки и убедитесь, что цена и доступный объём не изменились.</p>
+      <p class="eyebrow">ДВЕ СТОРОНЫ / ОДИН РЕЗУЛЬТАТ</p>
+      <h2 id="dialog-title">Рынок мог уже передумать</h2>
+      <p>Мы ничего не размещаем и не обещаем. Открой обе площадки и ещё раз проверь цену, объём и правила перед действиями.</p>
       <div class="dialog-summary">
-        <span>Расчётная разница</span><strong id="dialog-profit">—</strong>
+        <span>Ожидаемый чистый результат</span><strong id="dialog-profit">—</strong>
       </div>
       <div class="dialog-links">
-        <a class="primary-button primary-button--link" id="dialog-winline-link" href="https://winline.ru" target="_blank" rel="noreferrer">Открыть Winline</a>
-        <a class="secondary-button" id="dialog-poly-link" href="https://polymarket.com" target="_blank" rel="noreferrer">Открыть Polymarket</a>
+        <a class="primary-button primary-button--link" id="dialog-winline-link" href="https://winline.ru" target="_blank" rel="noreferrer"><img class="button-platform-logo" src="./assets/winline.svg" alt="">Открыть Winline</a>
+        <a class="secondary-button" id="dialog-poly-link" href="https://polymarket.com" target="_blank" rel="noreferrer"><img class="button-platform-logo" src="./assets/polymarket.svg" alt="">Открыть Polymarket</a>
       </div>
       <button class="dialog-dismiss" value="cancel">Закрыть</button>
     </form>
