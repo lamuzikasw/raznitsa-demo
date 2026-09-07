@@ -24,38 +24,37 @@
 
     <nav class="main-nav" aria-label="Основная навигация">
       <button class="nav-button is-active" type="button" data-nav="opportunities">Радар <span class="nav-count" data-radar-count>—</span></button>
-      <button class="nav-button" type="button" data-nav="finder">Собрать пару</button>
-      <button class="nav-button" type="button" data-nav="watch">На прицеле</button>
-      <button class="nav-button" type="button" data-nav="method">Без магии</button>
+      <button class="nav-button" type="button" data-nav="finder">Найти пару</button>
+      <button class="nav-button" type="button" data-nav="watch">Наблюдение</button>
+      <button class="nav-button" type="button" data-nav="method">Методика</button>
     </nav>
 
-    <div class="sync-status" aria-label="Статус источников">
+    <div class="sync-status" aria-label="Статус обновления данных" aria-live="polite">
       <span class="status-dot" aria-hidden="true"></span>
-      <span><strong id="source-status">Демо-режим</strong><small id="sync-time">локальный snapshot · без API</small></span>
+      <span><strong id="source-status">Демо-режим</strong><small id="sync-time">локальные данные · без API</small></span>
     </div>
   </header>
 
   <main id="main-content">
     <nav class="section-nav" aria-label="Разделы сервиса">
       <button class="section-nav-button is-active" type="button" data-nav="opportunities">Радар <span data-radar-count>—</span></button>
-      <button class="section-nav-button" type="button" data-nav="finder">Собрать пару</button>
-      <button class="section-nav-button" type="button" data-nav="watch">На прицеле</button>
-      <button class="section-nav-button" type="button" data-nav="method">Без магии</button>
+      <button class="section-nav-button" type="button" data-nav="finder">Найти пару</button>
+      <button class="section-nav-button" type="button" data-nav="watch">Наблюдение</button>
+      <button class="section-nav-button" type="button" data-nav="method">Методика</button>
     </nav>
 
     <section class="opportunities-view" id="opportunities" data-view="opportunities" aria-labelledby="opportunities-title">
       <div class="scanner-hero">
         <div>
-          <p class="eyebrow">РАДАР РАСХОЖДЕНИЙ / PREMATCH</p>
           <h1 id="opportunities-title">Рынки спорят.<br><span>Мы считаем.</span></h1>
           <p class="scanner-intro"><strong id="scanner-verdict">Сейчас без вилок. И это честно.</strong><span>Совпавшее событие — ещё не деньги. Мы читаем стакан, расходы и правила до того, как назвать окно возможностью.</span></p>
-          <p class="scanner-source"><img class="inline-platform-logo" src="./assets/winline.svg" alt=""> ЛИНИЯ WINLINE <b>×</b> <img class="inline-platform-logo" src="./assets/polymarket.svg" alt=""> СТАКАН POLYMARKET · ЛОКАЛЬНЫЙ SNAPSHOT</p>
+          <p class="scanner-source"><img class="inline-platform-logo" src="./assets/winline.svg" alt=""> ЛИНИЯ WINLINE <b>×</b> <img class="inline-platform-logo" src="./assets/polymarket.svg" alt=""> СТАКАН POLYMARKET · ДЕМО-ДАННЫЕ</p>
         </div>
         <div class="scanner-kpis" aria-label="Состояние сканера">
           <div class="kpi-hot"><span>Окно открыто</span><strong id="scanner-arb-count">—</strong><small>прошли всё</small></div>
-          <div><span>Математика есть</span><strong id="scanner-potential-count">—</strong><small>правила — ещё нет</small></div>
-          <div><span>Рынки совпали</span><strong id="scanner-match-count">—</strong><small>по событию</small></div>
-          <div><span>Стаканы прочитаны</span><strong id="scanner-book-count">—</strong><small>ask + глубина</small></div>
+          <div><span>Выше порога</span><strong id="scanner-potential-count">—</strong><small>условия не сверены</small></div>
+          <div><span>События</span><strong id="scanner-match-count">—</strong><small>совпали</small></div>
+          <div><span>Стаканы</span><strong id="scanner-book-count">—</strong><small>цена + глубина</small></div>
           <p class="scanner-funnel" id="scanner-funnel">Совпадения → стаканы → чистый край</p>
         </div>
       </div>
@@ -63,35 +62,34 @@
       <section class="scanner-board" aria-label="Лента найденных возможностей">
         <div class="scanner-toolbar">
           <div class="feed-filters" role="group" aria-label="Фильтр возможностей">
-            <button class="filter-chip is-active" type="button" data-feed-filter="all">Все расчёты</button>
-            <button class="filter-chip" type="button" data-feed-filter="potential">Математика есть</button>
+            <button class="filter-chip is-active" type="button" data-feed-filter="all">Все</button>
+            <button class="filter-chip" type="button" data-feed-filter="potential">Сверить условия</button>
             <button class="filter-chip" type="button" data-feed-filter="executable">Окно открыто</button>
-            <button class="filter-chip" type="button" data-feed-filter="stale">Протухшие</button>
+            <button class="filter-chip" type="button" data-feed-filter="stale">Цена ушла</button>
           </div>
           <div class="scanner-controls">
             <label class="compact-select">Спорт
               <select id="opportunity-sport"><option value="all">Все виды</option></select>
             </label>
             <button class="economy-trigger" type="button" data-economy-open>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M10 17H4M14 17h6M14 4v6M10 14v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-              <span>Что съедает край<strong data-economy-summary>RUB · расходы · buffer 1,5%</strong></span>
+              <img class="control-icon" src="./assets/sliders-horizontal.svg" alt="" aria-hidden="true">
+              <span>Настройки расчёта<strong data-economy-summary>RUB · курс · комиссии · запас 1,5%</strong></span>
             </button>
             <button class="scan-refresh" id="refresh-opportunities" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.2A7 7 0 0 1 18.5 7M17.9 15.8A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-              Пересчитать
+              <img class="control-icon refresh-icon" src="./assets/refresh-cw.svg" alt="" aria-hidden="true">
+              <span id="refresh-opportunities-label">Пересчитать демо</span>
             </button>
           </div>
         </div>
         <div class="feed-head" aria-hidden="true"><span>Вердикт</span><span>Две стороны</span><span>Исполнение</span><span>Почему</span></div>
         <div class="opportunity-list" id="opportunity-list" aria-live="polite"></div>
-        <p class="scanner-disclaimer"><strong>Публичное демо: все события и цены вымышлены.</strong> В репозитории нет API, сетевых коннекторов и production-данных. Расчёт не является гарантией дохода.</p>
+        <p class="scanner-disclaimer"><strong>Публичное демо: события и цены вымышлены.</strong> В репозитории нет API, сетевых коннекторов и production-данных. Расчёт не является гарантией дохода.</p>
       </section>
     </section>
 
     <section class="hero" id="scanner" data-view="finder" hidden aria-labelledby="page-title">
       <div class="hero-copy">
-        <p class="eyebrow">РУЧНАЯ СБОРКА / 4 ШАГА</p>
-        <h1 id="page-title">Дай нам матч.<br><span>Вторую сторону найдём сами.</span></h1>
+        <h1 id="page-title">Выбери матч.<br><span>Мы найдём пару.</span></h1>
       </div>
       <div class="hero-note">
         <span class="note-index">01</span>
@@ -147,8 +145,8 @@
 
         <div class="match-rail" aria-hidden="true">
           <span class="rail-line"></span>
-          <span class="rail-lock">
-            <svg viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+          <span class="rail-match">
+            <svg viewBox="0 0 24 24"><path d="M5 8h12m-3-3 3 3-3 3M19 16H7m3 3-3-3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
           <span class="rail-score" id="rail-score">—</span>
         </div>
@@ -160,7 +158,7 @@
               <h2 id="target-title">Нашли кандидатов</h2>
             </div>
             <button class="icon-button" id="refresh-match" type="button" aria-label="Повторить поиск">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 8.2A7 7 0 0 1 18.5 7M17.9 15.8A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
 
@@ -172,8 +170,7 @@
     <section class="arb-card" id="arb-card" data-view="finder" hidden aria-labelledby="arb-title">
       <div class="arb-heading">
         <div>
-          <p class="eyebrow eyebrow--dark">ЦЕНЫ ВСКРЫТЫ / СТАКАН ПРОЧИТАН</p>
-          <h2 id="arb-title">Вердикт готов</h2>
+          <h2 id="arb-title">Расчёт появится здесь</h2>
         </div>
         <div class="live-price"><span class="status-dot" aria-hidden="true"></span> локальный snapshot <strong id="countdown">DEMO</strong></div>
       </div>
@@ -182,7 +179,7 @@
 
       <div class="calculator-grid">
         <div class="capital-block">
-          <label for="capital-input">Капитал в базовой валюте</label>
+          <label for="capital-input">Сколько готовы распределить</label>
           <div class="money-input">
             <input id="capital-input" type="text" inputmode="numeric" value="10 000" aria-describedby="capital-help">
             <span id="capital-currency">₽</span>
@@ -197,37 +194,74 @@
         </div>
 
         <div class="legs-block">
+          <p class="allocation-help" id="allocation-help"><strong>Распределяем выбранную сумму</strong><span>Две части подобраны так, чтобы выплата получилась почти одинаковой при любом исходе.</span></p>
           <article class="leg-row">
             <div class="leg-platform"><span class="platform-glyph platform-glyph--w" id="calc-left-glyph" aria-hidden="true"><img src="./assets/winline.svg" alt=""></span><span id="calc-left-name">Winline<small id="left-outcome">—</small></span></div>
             <div class="leg-price"><small>Коэффициент</small><strong id="left-odds">—</strong></div>
-            <div class="leg-stake"><small>Доля капитала</small><strong id="left-stake">—</strong></div>
+            <div class="leg-stake"><small>Поставить</small><strong id="left-stake">—</strong></div>
+            <p class="leg-equation" id="left-equation">Ставка × коэффициент = выплата</p>
           </article>
           <article class="leg-row">
             <div class="leg-platform"><span class="platform-glyph platform-glyph--p" id="calc-right-glyph" aria-hidden="true"><img src="./assets/polymarket.svg" alt=""></span><span id="calc-right-name">Polymarket<small id="right-outcome">—</small></span></div>
-            <div class="leg-price"><small id="right-price-label">Средняя цена</small><strong id="right-price">—</strong></div>
-            <div class="leg-stake"><small>Доля капитала</small><strong id="right-stake">—</strong></div>
+            <div class="leg-price"><small id="right-price-label">Цена контракта</small><strong id="right-price">—</strong></div>
+            <div class="leg-stake"><small>Заплатить</small><strong id="right-stake">—</strong><span id="right-stake-secondary"></span></div>
+            <p class="leg-equation" id="right-equation">Цена контракта определяет стоимость второй стороны</p>
           </article>
-          <div class="payout-line"><span>Расчётная выплата при исполнении</span><strong id="equal-payout">—</strong></div>
+          <div class="payout-line"><span>При любом исходе получите примерно</span><strong id="equal-payout">—</strong></div>
+
+          <section class="formula-card" aria-labelledby="formula-title">
+            <div class="formula-heading">
+              <div>
+                <span>Формула без магии</span>
+                <h3 id="formula-title">Откуда берётся процент</h3>
+              </div>
+              <strong id="formula-roi">—</strong>
+            </div>
+            <p class="formula-intro" id="formula-intro">Считаем, сколько нужно заплатить на каждой площадке, чтобы один из исходов вернул 100 ₽.</p>
+            <div class="formula-sides">
+              <article>
+                <span>Winline</span>
+                <strong id="formula-winline-cost">—</strong>
+                <small id="formula-winline-operation">100 ₽ ÷ коэффициент</small>
+              </article>
+              <span class="formula-plus" aria-hidden="true">+</span>
+              <article>
+                <span>Polymarket</span>
+                <strong id="formula-polymarket-cost">—</strong>
+                <small id="formula-polymarket-operation">100 ₽ × цена контракта</small>
+              </article>
+            </div>
+            <div class="formula-total">
+              <p><span>Потратили вместе</span><strong id="formula-spent">—</strong></p>
+              <span class="formula-arrow" aria-hidden="true">→</span>
+              <p><span>Получили</span><strong id="formula-received">—</strong></p>
+              <span class="formula-arrow" aria-hidden="true">→</span>
+              <p><span>Разница</span><strong id="formula-difference">—</strong></p>
+            </div>
+            <p class="formula-result" id="formula-result">Разница ÷ потраченная сумма × 100 = доходность до расходов.</p>
+          </section>
         </div>
 
         <div class="profit-block">
-          <span class="profit-label">Теоретическая доходность</span>
+          <span class="profit-label">Доходность до расходов</span>
           <strong class="profit-value" id="profit-percent">—</strong>
           <span class="profit-money" id="profit-money">до расходов</span>
           <div class="net-result">
-            <span>Ожидаемая чистая</span>
+            <span>После всех расходов</span>
             <strong id="net-profit-percent">—</strong>
             <small id="net-profit-money">с учётом расходов</small>
           </div>
-          <div class="profit-meta"><span id="expense-chip">расходы —</span><span id="safety-chip">buffer 1,5%</span><span id="liquidity-chip">проверяем объём</span></div>
-          <button class="primary-button" id="build-position" type="button">Открыть обе стороны</button>
+          <p class="result-explanation" id="result-explanation">После выбора пары здесь появится простой итог расчёта.</p>
+          <div class="profit-meta"><span id="expense-chip">Расходы: —</span><span id="safety-chip">Защитный запас 1,5%</span><span id="liquidity-chip">Проверяем доступный объём</span></div>
+          <button class="primary-button" id="build-position" type="button">Открыть площадки</button>
+          <button class="watch-toggle" id="watch-toggle" type="button" disabled>Добавить в наблюдение</button>
         </div>
       </div>
 
       <button class="rules-toggle" id="rules-toggle" type="button" aria-expanded="false" aria-controls="rules-panel">
         <span>
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-11v4m0 3h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          Вскрыть формулу, признаки и правила
+          Что проверено и что проверить вручную
         </span>
         <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
@@ -235,18 +269,12 @@
     </section>
 
     <section class="watch-view" data-view="watch" hidden aria-labelledby="watch-title">
-      <p class="eyebrow">НА ПРИЦЕЛЕ</p>
-      <div class="watch-card">
-        <span class="watch-index">00</span>
-        <div><h1 id="watch-title">Пока никого. Радар чист.</h1><p>Сохрани событие — будем следить за ценой и подадим сигнал, когда математика перестанет спорить.</p></div>
-        <button class="secondary-action" type="button" data-nav="opportunities">Вернуться на радар</button>
-      </div>
+      <div id="watch-content"></div>
     </section>
 
-    <section class="concept-note" data-view="method" hidden aria-label="Логика концепта">
-      <p class="eyebrow">БЕЗ МАГИИ / ТОЛЬКО МЕХАНИКА</p>
+    <section class="concept-note" data-view="method" hidden aria-labelledby="method-title">
       <div class="concept-grid">
-        <h2>Каждый процент назван. Каждый вывод можно проверить.</h2>
+        <h1 id="method-title">Каждый процент — на виду.</h1>
         <div>
           <p>Линия букмекера задаёт одну сторону. Стакан prediction market — вторую. Мы не склеиваем их молча: команды, время, формат, цена и глубина проверяются отдельно.</p>
           <p>Если денег в расхождении нет, интерфейс так и говорит. Хороший радар не обязан всегда пищать.</p>
@@ -256,9 +284,9 @@
       <div class="method-economy" aria-label="Формула доходности">
         <article><span>01 / ТЕОРИЯ</span><strong>Выплата ÷ сумма ставок − 1</strong><p>Используем среднюю исполнимую цену по уровням стакана, а не только лучший ask.</p></article>
         <article><span>02 / ЧИСТЫЙ РЕЗУЛЬТАТ</span><strong>Теория − расходы − округление</strong><p>Учитываем конвертацию, ввод, вывод, комиссии площадок и резерв движения цены.</p></article>
-        <article><span>03 / ДОПУСК</span><strong>Чистая доходность ≥ safety buffer</strong><p>Статус требует также свежих цен, минимального ордера, глубины и совместимых правил.</p></article>
+        <article><span>03 / ДОПУСК</span><strong>Чистая доходность выше защитного запаса</strong><p>Статус требует также свежих цен, минимального ордера, глубины и совместимых правил.</p></article>
       </div>
-      <button class="secondary-action method-economy-button" type="button" data-economy-open>Покрутить экономику</button>
+      <button class="secondary-action method-economy-button" type="button" data-economy-open>Настроить расходы</button>
     </section>
   </main>
 
@@ -269,12 +297,11 @@
       <button class="dialog-close" value="cancel" aria-label="Закрыть">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
-      <p class="eyebrow">ГДЕ СЪЕДАЕТСЯ РАЗНИЦА</p>
       <h2 id="economy-dialog-title">Ни один расход не спрячется</h2>
-      <p class="economy-intro">Настрой допущения публичной симуляции. Значения не являются тарифами площадок и не загружаются из внешних источников.</p>
+      <p class="economy-intro">Задай свою валюту и реальные условия аккаунтов. Каждый процент назван отдельно — никакого удобного «прочего».</p>
 
       <section class="economy-section" aria-labelledby="currency-title">
-        <div class="economy-section-heading"><span>01</span><div><h3 id="currency-title">Валюта и курс</h3><p id="fx-source">Демонстрационный курс · локально</p></div></div>
+        <div class="economy-section-heading"><span>01</span><div><h3 id="currency-title">Валюта и курс</h3><p id="fx-source">Проверяем курс USDC/RUB…</p></div></div>
         <div class="economy-field-grid economy-field-grid--two">
           <label>Базовая валюта
             <select data-economy-field="baseCurrency">
@@ -305,7 +332,7 @@
         <div class="economy-field-grid economy-field-grid--three">
           <label>Шаг ставки Winline <span>RUB</span><input type="number" min="0.01" step="0.01" inputmode="decimal" data-economy-field="bookmakerRoundingRub" value="1"></label>
           <label>Мин. ордер Polymarket <span>USDC</span><input type="number" min="0" step="0.1" inputmode="decimal" data-economy-field="polymarketMinOrderUsdc" value="5"></label>
-          <label>Safety buffer <span>чистый порог, %</span><input type="number" min="0" max="20" step="0.1" inputmode="decimal" data-economy-field="safetyBuffer" data-economy-kind="percent" value="1.5"></label>
+          <label>Защитный запас <span>минимальный чистый плюс, %</span><input type="number" min="0" max="20" step="0.1" inputmode="decimal" data-economy-field="safetyBuffer" data-economy-kind="percent" value="1.5"></label>
         </div>
       </section>
 
@@ -314,7 +341,7 @@
         <strong id="economy-threshold-summary">Чистая доходность ≥ 1,50%</strong>
         <small>Плюс свежая цена, достаточная глубина, минимальный ордер и совпадающие правила.</small>
       </div>
-      <button class="primary-button economy-apply" value="confirm">Пересчитать без иллюзий</button>
+      <button class="primary-button economy-apply" value="confirm">Применить настройки</button>
     </form>
   </dialog>
 
@@ -323,7 +350,6 @@
       <button class="dialog-close" value="cancel" aria-label="Закрыть">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
-      <p class="eyebrow">ДВЕ СТОРОНЫ / ОДИН РЕЗУЛЬТАТ</p>
       <h2 id="dialog-title">Рынок мог уже передумать</h2>
       <p>Мы ничего не размещаем и не обещаем. Открой обе площадки и ещё раз проверь цену, объём и правила перед действиями.</p>
       <div class="dialog-summary">

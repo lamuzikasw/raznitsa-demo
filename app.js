@@ -133,7 +133,8 @@ const state = {
   priceMoveReserve: 0.0075,
   bookmakerRoundingRub: 1,
   polymarketMinOrderUsdc: 5,
-  safetyBuffer: 0.015
+  safetyBuffer: 0.015,
+  watchIds: new Set()
 };
 
 const el = {
@@ -145,6 +146,8 @@ const el = {
   arbTitle: document.querySelector("#arb-title"),
   trustVerdict: document.querySelector("#trust-verdict"),
   capital: document.querySelector("#capital-input"),
+  allocationHelp: document.querySelector("#allocation-help"),
+  resultExplanation: document.querySelector("#result-explanation"),
   capitalCurrency: document.querySelector("#capital-currency"),
   rulesToggle: document.querySelector("#rules-toggle"),
   rulesPanel: document.querySelector("#rules-panel"),
@@ -156,7 +159,10 @@ const el = {
   scannerArbCount: document.querySelector("#scanner-arb-count"),
   scannerPotentialCount: document.querySelector("#scanner-potential-count"),
   scannerMatchCount: document.querySelector("#scanner-match-count"),
-  scannerBookCount: document.querySelector("#scanner-book-count")
+  scannerBookCount: document.querySelector("#scanner-book-count"),
+  refreshOpportunitiesLabel: document.querySelector("#refresh-opportunities-label"),
+  watchContent: document.querySelector("#watch-content"),
+  watchToggle: document.querySelector("#watch-toggle")
 };
 
 const checkSvg = `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 10 3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -204,6 +210,33 @@ function formatMoney(value, currency = state.baseCurrency) {
   const number = Number(value) || 0;
   if (currency === "RUB") return `${number.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₽`;
   return `${number.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`;
+}
+
+function formatExactMoney(value, currency = state.baseCurrency) {
+  const number = Number(value) || 0;
+  const suffix = currency === "RUB" ? "₽" : "USDC";
+  return `${number.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${suffix}`;
+}
+
+function formatDecimal(value, digits = 4) {
+  return Number(value).toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function loadWatchIds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("raznitsa-demo-watchlist") || "[]");
+    state.watchIds = new Set(Array.isArray(saved) ? saved.filter(item => typeof item === "string") : []);
+  } catch {
+    state.watchIds = new Set();
+  }
+}
+
+function persistWatchIds() {
+  try {
+    localStorage.setItem("raznitsa-demo-watchlist", JSON.stringify(Array.from(state.watchIds)));
+  } catch {
+    showToast("Не удалось сохранить наблюдение в этом браузере");
+  }
 }
 
 function toBaseFromRub(value) {
@@ -281,13 +314,16 @@ function renderSource() {
     }).sort((a, b) => b.pairs - a.pairs);
   }
   if (state.stage === 2) {
-    options = DEMO.events.filter(eventItem => eventItem.leagueId === state.league).map(eventItem => ({
-      id: eventItem.id,
-      label: `${eventItem.team1} — ${eventItem.team2}`,
-      meta: eventItem.dateLabel,
-      code: eventItem.candidate ? "совпало" : `${eventItem.odds[0].toFixed(2)} / ${eventItem.odds[1].toFixed(2)}`,
-      hasMatch: Boolean(eventItem.candidate)
-    }));
+    options = DEMO.events
+      .filter(eventItem => eventItem.leagueId === state.league)
+      .sort((a, b) => Number(Boolean(b.candidate)) - Number(Boolean(a.candidate)) || a.team1.localeCompare(b.team1))
+      .map(eventItem => ({
+        id: eventItem.id,
+        label: `${eventItem.team1} — ${eventItem.team2}`,
+        meta: eventItem.dateLabel,
+        code: eventItem.candidate ? "совпало" : `${eventItem.odds[0].toFixed(2)} / ${eventItem.odds[1].toFixed(2)}`,
+        hasMatch: Boolean(eventItem.candidate)
+      }));
   }
   if (state.stage === 3 && event) {
     options = [
@@ -298,9 +334,14 @@ function renderSource() {
 
   el.stage.innerHTML = `
     <div class="stage-card">
-      <div class="stage-head"><h3>${titles[state.stage]}</h3><span class="step-counter">Шаг ${state.stage + 1} / 4</span></div>
+      <div class="stage-head">
+        <div class="stage-title">
+          ${state.stage > 0 ? `<button class="back-button" type="button" data-back>← На шаг назад</button>` : ""}
+          <h3>${titles[state.stage]}</h3>
+        </div>
+        <span class="step-counter">Шаг ${state.stage + 1} / 4</span>
+      </div>
       <div class="option-grid">${options.map(item => optionButton(item, selectedForStep(state.stage) === item.id, state.stage)).join("")}</div>
-      ${state.stage > 0 ? `<button class="back-button" type="button" data-back>← Назад</button>` : ""}
     </div>`;
 }
 
@@ -425,17 +466,29 @@ function opportunityAssessment(opportunity, metrics) {
   const economicsConfirmed = thresholdPassed && volumeConfirmed;
   const rulesConfirmed = opportunity.candidate.rulesConfirmed === true;
   const executable = economicsConfirmed && rulesConfirmed;
-  if (executable) return { key: "executable", label: "Окно открыто", cleanPositive, economicsConfirmed, volumeConfirmed, rulesConfirmed, executable };
-  if (economicsConfirmed) return { key: "potential", label: "Математика есть", cleanPositive, economicsConfirmed, volumeConfirmed, rulesConfirmed, executable };
-  return { key: "pair", label: "Не сошлось", cleanPositive, economicsConfirmed, volumeConfirmed, rulesConfirmed, executable };
+  const shared = { cleanPositive, thresholdPassed, economicsConfirmed, volumeConfirmed, rulesConfirmed, executable };
+  if (executable) return { key: "executable", label: "Окно открыто", ...shared };
+  if (economicsConfirmed) return { key: "potential", label: "Сверить условия", ...shared };
+  return { key: "pair", label: cleanPositive ? "Ниже порога" : "Нет преимущества", ...shared };
 }
 
 function opportunityCard(opportunity, metrics) {
   const assessment = opportunityAssessment(opportunity, metrics);
-  const netClass = assessment.executable ? "is-positive" : metrics.netRoi > 0 ? "is-near" : "";
+  const netClass = assessment.thresholdPassed ? "is-positive" : metrics.netRoi > 0 ? "is-near" : "";
   const netPercent = formatPercent(metrics.netRoi);
   const grossPercent = formatPercent(metrics.grossRoi);
   const expensePercent = `${(metrics.costRate * 100).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+  const executionLimited = !metrics.execution.complete || !metrics.execution.polymarketMinimumMet;
+  const executionTitle = !metrics.execution.polymarketMinimumMet
+    ? "Ордер слишком мал"
+    : metrics.execution.complete
+      ? `На ${formatMoney(metrics.execution.capitalUsed)}`
+      : `До ${formatMoney(metrics.execution.capitalUsed)}`;
+  const executionCopy = !metrics.execution.polymarketMinimumMet
+    ? `Минимум ${formatMoney(state.polymarketMinOrderUsdc, "USDC")}`
+    : metrics.execution.complete
+      ? "Демо-объёма хватает"
+      : "В демо-данных не хватает объёма";
   const averagePrice = metrics.execution.averagePrice;
   const breakEvenPrice = 1 - 1 / opportunity.odds;
   const priceGap = averagePrice - breakEvenPrice;
@@ -445,13 +498,15 @@ function opportunityCard(opportunity, metrics) {
   const meterCopy = combinedPrice < 1
     ? `Зазор ${(Math.abs(priceGap) * 100).toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}¢`
     : `До вилки не хватает ${(priceGap * 100).toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}¢`;
-  const maxCapital = assessment.volumeConfirmed ? `до ${formatMoney(metrics.capacity.capital)}` : "нет объёма выше порога";
-  const economyText = assessment.economicsConfirmed ? "Математика сошлась" : assessment.cleanPositive ? "Почти. Но мало." : "Денег в разнице нет";
+  const economyText = assessment.economicsConfirmed ? "Экономика подтверждена" : assessment.cleanPositive ? "Ниже порога" : "Преимущества нет";
   const economyDetail = assessment.economicsConfirmed
     ? `${netPercent} чистыми · порог ${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%`
-    : `${netPercent} после расходов`;
+    : assessment.cleanPositive
+      ? `${netPercent} < ${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%`
+      : `${netPercent} после расходов`;
+  const isWatching = state.watchIds.has(opportunity.id);
   return `
-    <button class="opportunity-card" type="button" data-open-opportunity="${escapeHtml(opportunity.id)}" aria-label="Открыть подробный разбор: ${escapeHtml(opportunity.event.team1)} — ${escapeHtml(opportunity.event.team2)}">
+    <article class="opportunity-card">
       <span class="opp-return ${netClass}">
         <span class="opp-status is-${assessment.key}">${assessment.label}</span>
         <strong>${netPercent}</strong>
@@ -471,22 +526,100 @@ function opportunityCard(opportunity, metrics) {
         </span>
       </span>
       <span class="opp-execution">
-        <strong>${maxCapital}</strong>
-        <span class="liquidity-state${assessment.volumeConfirmed ? "" : " is-limited"}">${assessment.volumeConfirmed ? "Демо-объём покрывает порог" : "Ниже порога / min order"}</span>
-        <span>Локальный snapshot</span>
-        <span>Вымышленные данные · без API</span>
+        <strong>${executionTitle}</strong>
+        <span class="execution-state${executionLimited ? " is-limited" : ""}">${executionCopy}</span>
+        <span class="execution-age">Локальный snapshot · без API</span>
       </span>
       <span class="opp-check trust-stack">
-        <span class="trust-signal is-ok"><i>✓</i><span><strong>Событие сошлось</strong><small>Связано заранее в demo dataset</small></span></span>
+        <span class="trust-signal is-ok"><i>✓</i><span><strong>Событие сошлось</strong><small>Связано заранее в демо-данных</small></span></span>
         <span class="trust-signal ${assessment.economicsConfirmed ? "is-ok" : "is-neutral"}"><i>${assessment.economicsConfirmed ? "✓" : "—"}</i><span><strong>${economyText}</strong><small>${economyDetail}</small></span></span>
-        <span class="trust-signal ${assessment.rulesConfirmed ? "is-ok" : "is-warn"}"><i>${assessment.rulesConfirmed ? "✓" : "!"}</i><span><strong>${assessment.rulesConfirmed ? "Демо-правила совпали" : "Правила проверить"}</strong><small>В production проверяются отдельно</small></span></span>
-        <span class="opp-arrow">Вскрыть расчёт →</span>
+        <span class="trust-signal ${assessment.rulesConfirmed ? "is-ok" : "is-warn"}"><i>${assessment.rulesConfirmed ? "✓" : "!"}</i><span><strong>${assessment.rulesConfirmed ? "Условия демо совпали" : "Овертайм и отмена не сверены"}</strong><small>${assessment.rulesConfirmed ? "Проверка задана в сценарии" : "В реальном сервисе сравниваются отдельно"}</small></span></span>
+        <span class="opp-card-actions">
+          <button class="opp-open" type="button" data-open-opportunity="${escapeHtml(opportunity.id)}">Открыть расчёт</button>
+          <button class="opp-watch${isWatching ? " is-watching" : ""}" type="button" data-watch-opportunity="${escapeHtml(opportunity.id)}">${isWatching ? "✓ В наблюдении" : "+ В наблюдение"}</button>
+        </span>
       </span>
-    </button>`;
+    </article>`;
 }
 
 function allOpportunities() {
   return DEMO.events.map(opportunityForEvent).filter(Boolean);
+}
+
+function currentOpportunity() {
+  return allOpportunities().find(item => item.event.id === state.event) || null;
+}
+
+function currentOpportunityId() {
+  return currentOpportunity()?.id || null;
+}
+
+function renderWatch() {
+  if (!el.watchContent) return;
+  const watched = allOpportunities()
+    .filter(opportunity => state.watchIds.has(opportunity.id))
+    .map(opportunity => {
+      const metrics = opportunityMetrics(opportunity);
+      return metrics ? { opportunity, metrics, assessment: opportunityAssessment(opportunity, metrics) } : null;
+    })
+    .filter(Boolean);
+
+  if (!watched.length) {
+    el.watchContent.innerHTML = `
+      <div class="watch-card">
+        <span class="watch-index">00</span>
+        <div><h1 id="watch-title">Пока ничего не добавлено.</h1><p>На карточке события нажми «+ В наблюдение». Сохранённые демо-пары появятся здесь.</p></div>
+        <button class="secondary-action" type="button" data-nav="opportunities">Вернуться на радар</button>
+      </div>`;
+    return;
+  }
+
+  el.watchContent.innerHTML = `
+    <div class="watch-list-head">
+      <div><h1 id="watch-title">Наблюдение</h1><p>${watched.length} ${pluralRu(watched.length, "событие сохранено", "события сохранены", "событий сохранено")} в этом браузере.</p></div>
+      <button class="secondary-action" type="button" data-nav="opportunities">Открыть радар</button>
+    </div>
+    <div class="watch-list">
+      ${watched.map(({ opportunity, metrics, assessment }) => `
+        <article class="watch-item">
+          <div>
+            <span class="watch-item-meta">${escapeHtml(opportunity.event.sportName)} · ${escapeHtml(opportunity.event.dateLabel)} · ${assessment.label}</span>
+            <h2>${escapeHtml(opportunity.event.team1)} — ${escapeHtml(opportunity.event.team2)}</h2>
+            <p>${formatPercent(metrics.netRoi)} чистыми · Winline ${opportunity.odds.toFixed(2)} · Polymarket ${Math.round(metrics.execution.averagePrice * 1000) / 10}¢</p>
+          </div>
+          <div class="watch-item-actions">
+            <button class="watch-open" type="button" data-open-opportunity="${escapeHtml(opportunity.id)}">Открыть расчёт</button>
+            <button type="button" data-unwatch="${escapeHtml(opportunity.id)}">Убрать</button>
+          </div>
+        </article>`).join("")}
+    </div>`;
+}
+
+function toggleWatchById(id) {
+  if (state.watchIds.has(id)) {
+    state.watchIds.delete(id);
+    showToast("Пара убрана из наблюдения");
+  } else {
+    if (!allOpportunities().some(item => item.id === id)) {
+      showToast("Эта демо-пара больше недоступна");
+      return;
+    }
+    state.watchIds.add(id);
+    showToast("Добавлено в наблюдение");
+  }
+  persistWatchIds();
+  renderWatch();
+  renderOpportunities();
+  if (state.activeView === "finder") renderTarget();
+}
+
+function toggleCurrentWatch() {
+  const id = currentOpportunityId();
+  if (!id) {
+    showToast("Сначала выбери найденную пару");
+    return;
+  }
+  toggleWatchById(id);
 }
 
 function renderOpportunitySportOptions(opportunities) {
@@ -530,6 +663,10 @@ function renderOpportunities() {
 function renderTarget() {
   const event = currentEvent();
   if (!event || state.stage !== 4) {
+    el.trustVerdict.innerHTML = "";
+    el.watchToggle.disabled = true;
+    el.watchToggle.classList.remove("is-watching");
+    el.watchToggle.textContent = "+ Добавить в наблюдение";
     el.results.innerHTML = `<div class="empty-target"><div>${searchSvg}<p>Собери исход слева. Вторую сторону найдём в локальном dataset.</p></div></div>`;
     el.railScore.textContent = "—";
     el.arbCard.classList.add("is-unavailable");
@@ -537,6 +674,8 @@ function renderTarget() {
   }
   const candidate = event.candidate;
   if (!candidate) {
+    el.trustVerdict.innerHTML = "";
+    el.watchToggle.disabled = true;
     el.results.innerHTML = `<div class="empty-target"><div>${searchSvg}<p><strong>В snapshot пары нет</strong>Выбери матч с отметкой «совпало».</p></div></div>`;
     el.railScore.textContent = "—";
     el.arbCard.classList.add("is-unavailable");
@@ -546,9 +685,17 @@ function renderTarget() {
   const side = currentSideIndex();
   const hedgeIndex = side === 0 ? 1 : 0;
   const bestAsk = candidate.asks[hedgeIndex][0];
+  const watchId = currentOpportunityId();
+  const isWatching = Boolean(watchId) && state.watchIds.has(watchId);
   el.railScore.textContent = "ПАРА";
   el.results.innerHTML = `
-    <div class="match-summary"><span class="confidence-note">1 кандидат · связан заранее в demo dataset</span><button class="manual-link" type="button" data-manual>Вскрыть признаки</button></div>
+    <div class="match-summary">
+      <span class="confidence-note">1 кандидат · связан заранее в демо-данных</span>
+      <span class="match-summary-actions">
+        <button class="manual-link" type="button" data-manual>Почему совпало</button>
+        <button class="summary-watch${isWatching ? " is-watching" : ""}" type="button" data-watch-current>${isWatching ? "✓ В наблюдении" : "+ В наблюдение"}</button>
+      </span>
+    </div>
     <div class="candidate-list">
       <button class="candidate-card is-selected" type="button" aria-pressed="true">
         <span class="candidate-top"><span class="candidate-source"><img class="inline-platform-logo" src="./assets/polymarket.svg" alt="">POLYMARKET / DEMO</span><span class="candidate-confidence">Событие сошлось</span></span>
@@ -574,15 +721,43 @@ function updateCalculation() {
   const theoreticalProfit = execution.theoreticalPayout - execution.continuousCapital;
   const expenseRate = execution.capitalUsed > 0 ? execution.expenses.total / execution.capitalUsed : 0;
   el.arbTitle.textContent = economicsConfirmed
-    ? (candidate.rulesConfirmed ? "Демо-окно открыто" : "Математика есть. Проверь правила")
-    : execution.netRoi > 0 ? "Почти. Но ниже safety buffer" : "Событие сошлось. Денег в разнице нет";
+    ? (candidate.rulesConfirmed ? "Демо-окно открыто" : "Выше порога. Сверь условия исхода")
+    : execution.netRoi > 0 ? "Ниже порога" : "Преимущества нет";
   document.querySelector("#left-outcome").textContent = event[`team${side + 1}`];
   document.querySelector("#right-outcome").textContent = candidate.outcomes[hedgeIndex];
   document.querySelector("#left-odds").textContent = event.odds[side].toFixed(2);
   document.querySelector("#right-price").textContent = `${Math.round(execution.averagePrice * 1000) / 10}¢`;
   document.querySelector("#left-stake").textContent = formatMoney(execution.winlineStakeRub, "RUB");
-  document.querySelector("#right-stake").textContent = formatMoney(execution.polymarketStakeUsdc, "USDC");
+  document.querySelector("#right-stake").textContent = formatMoney(toBaseFromUsdc(execution.polymarketStakeUsdc));
+  const rightStakeSecondary = document.querySelector("#right-stake-secondary");
+  rightStakeSecondary.textContent = state.baseCurrency === "RUB" ? formatMoney(execution.polymarketStakeUsdc, "USDC") : "";
+  rightStakeSecondary.hidden = state.baseCurrency !== "RUB";
+  el.allocationHelp.innerHTML = `<strong>Распределяем ${formatMoney(execution.capitalUsed)}</strong><span>Суммы разные, потому что одинаковая будущая выплата на площадках стоит по-разному.</span>`;
   document.querySelector("#equal-payout").textContent = formatMoney(execution.payout);
+  const odds = event.odds[side];
+  const winlinePayoutRub = execution.winlineStakeRub * odds;
+  document.querySelector("#left-equation").textContent = `${formatMoney(execution.winlineStakeRub, "RUB")} × ${odds.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} = ${formatMoney(winlinePayoutRub, "RUB")} выплаты`;
+  document.querySelector("#right-equation").textContent = `${formatExactMoney(execution.polymarketStakeUsdc, "USDC")} → ${formatExactMoney(execution.contracts, "USDC")} выплаты при победе`;
+
+  const examplePayout = 100;
+  const winlineExampleCost = examplePayout / odds;
+  const polymarketExampleCost = examplePayout * execution.averagePrice;
+  const exampleSpent = winlineExampleCost + polymarketExampleCost;
+  const exampleDifference = examplePayout - exampleSpent;
+  const exampleRoi = exampleDifference / exampleSpent;
+  const examplePayoutText = formatExactMoney(examplePayout);
+  document.querySelector("#formula-roi").textContent = formatPercent(exampleRoi);
+  document.querySelector("#formula-roi").classList.toggle("is-negative", exampleRoi <= 0);
+  document.querySelector("#formula-intro").textContent = `Считаем, сколько нужно заплатить на каждой площадке, чтобы один из исходов вернул ${examplePayoutText}.`;
+  document.querySelector("#formula-winline-cost").textContent = formatExactMoney(winlineExampleCost);
+  document.querySelector("#formula-winline-operation").textContent = `${examplePayoutText} ÷ коэффициент ${odds.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.querySelector("#formula-polymarket-cost").textContent = formatExactMoney(polymarketExampleCost);
+  document.querySelector("#formula-polymarket-operation").textContent = `${examplePayoutText} × цена ${formatDecimal(execution.averagePrice)}`;
+  document.querySelector("#formula-spent").textContent = formatExactMoney(exampleSpent);
+  document.querySelector("#formula-received").textContent = examplePayoutText;
+  document.querySelector("#formula-difference").textContent = `${exampleDifference >= 0 ? "+" : ""}${formatExactMoney(exampleDifference)}`;
+  document.querySelector("#formula-difference").classList.toggle("is-negative", exampleDifference <= 0);
+  document.querySelector("#formula-result").textContent = `${formatExactMoney(exampleDifference)} ÷ ${formatExactMoney(exampleSpent)} × 100 = ${formatPercent(exampleRoi)} до расходов. После комиссий и резерва итог показан справа.`;
   document.querySelector("#profit-percent").textContent = formatPercent(execution.theoreticalRoi);
   document.querySelector("#profit-percent").classList.toggle("is-negative", execution.theoreticalRoi <= 0);
   document.querySelector("#profit-money").textContent = `${theoreticalProfit >= 0 ? "+" : ""}${formatMoney(theoreticalProfit)} до расходов`;
@@ -592,29 +767,72 @@ function updateCalculation() {
   document.querySelector("#net-profit-money").textContent = `${execution.netProfit >= 0 ? "+" : ""}${formatMoney(execution.netProfit)} после расходов`;
   document.querySelector("#dialog-profit").textContent = `${execution.netProfit >= 0 ? "+" : ""}${formatMoney(execution.netProfit)}`;
   document.querySelector("#dialog-profit").classList.toggle("is-negative", execution.netProfit <= 0);
-  document.querySelector("#expense-chip").textContent = `расходы ${formatMoney(execution.expenses.total)} · ${(expenseRate * 100).toLocaleString("ru-RU", { maximumFractionDigits: 2 })}%`;
-  document.querySelector("#safety-chip").textContent = `buffer ${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}% · ${safetyPassed ? "пройден" : "не пройден"}`;
-  document.querySelector("#liquidity-chip").textContent = `${execution.contracts.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} контрактов · ${execution.levelsUsed} ур.`;
-  document.querySelector("#capital-help").textContent = execution.complete ? "Демо-глубина покрывает выбранную сумму" : `Исполнимо ${formatMoney(execution.capitalUsed)} из ${formatMoney(state.capital)} в snapshot`;
+  el.resultExplanation.textContent = execution.netRoi < 0
+    ? "Это не вилка: расчёт показывает убыток независимо от победителя."
+    : safetyPassed
+      ? "После расходов остаётся запас выше заданного порога. В реальном сервисе перед действием нужно сравнить условия исхода."
+      : "Плюс есть, но он меньше защитного запаса и может исчезнуть при изменении цены.";
+  document.querySelector("#expense-chip").textContent = `Расходы: ${formatMoney(execution.expenses.total)} · ${(expenseRate * 100).toLocaleString("ru-RU", { maximumFractionDigits: 2 })}%`;
+  document.querySelector("#safety-chip").textContent = `Защитный запас ${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%: ${safetyPassed ? "пройден" : "не пройден"}`;
+  document.querySelector("#liquidity-chip").textContent = `Демо-объём: ${execution.contracts.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} контрактов`;
+  document.querySelector("#capital-help").textContent = execution.complete ? "Демо-объёма достаточно для расчёта всей суммы." : `Можно распределить только ${formatMoney(execution.capitalUsed)} из ${formatMoney(state.capital)}.`;
   el.trustVerdict.innerHTML = `
-    <div class="verdict-item is-ok"><i>✓</i><span><strong>Событие сошлось</strong><small>Связано заранее в локальном dataset</small></span></div>
-    <div class="verdict-item ${economicsConfirmed ? "is-ok" : "is-neutral"}"><i>${economicsConfirmed ? "✓" : "—"}</i><span><strong>${economicsConfirmed ? "Математика сошлась" : execution.netRoi > 0 ? "Почти. Но мало." : "Денег в разнице нет"}</strong><small>${formatPercent(execution.netRoi)} чистыми · demo buffer ${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%</small></span></div>
-    <div class="verdict-item ${candidate.rulesConfirmed ? "is-ok" : "is-warn"}"><i>${candidate.rulesConfirmed ? "✓" : "!"}</i><span><strong>${candidate.rulesConfirmed ? "Демо-правила совпали" : "Правила ещё спорят"}</strong><small>В production требуют отдельной проверки</small></span></div>`;
+    <div class="verdict-item is-ok"><i>✓</i><span><strong>Событие сошлось</strong><small>Связано заранее в демо-данных</small></span></div>
+    <div class="verdict-item ${economicsConfirmed ? "is-ok" : "is-neutral"}"><i>${economicsConfirmed ? "✓" : "—"}</i><span><strong>${economicsConfirmed ? "Экономика подтверждена" : execution.netRoi > 0 ? "Ниже порога" : "Преимущества нет"}</strong><small>${formatPercent(execution.netRoi)} чистыми · порог ${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}% · демо-объём есть</small></span></div>
+    <div class="verdict-item ${candidate.rulesConfirmed ? "is-ok" : "is-warn"}"><i>${candidate.rulesConfirmed ? "✓" : "!"}</i><span><strong>${candidate.rulesConfirmed ? "Условия демо совпали" : "Овертайм и отмена не сверены"}</strong><small>${candidate.rulesConfirmed ? "Проверка задана в сценарии" : "В реальном сервисе сравниваются отдельно"}</small></span></div>`;
+  const watchId = currentOpportunityId();
+  const isWatching = Boolean(watchId) && state.watchIds.has(watchId);
+  el.watchToggle.disabled = !watchId;
+  el.watchToggle.classList.toggle("is-watching", isWatching);
+  el.watchToggle.textContent = isWatching ? "✓ Уже в наблюдении" : "+ Добавить в наблюдение";
 }
 
 function renderRules() {
   const event = currentEvent();
   const candidate = event?.candidate;
   if (!event || !candidate) return;
+  const rulesMatch = candidate.rulesConfirmed === true;
   el.rulesPanel.innerHTML = `
-    <div class="rule-table" role="table" aria-label="Демонстрационное сравнение исходных данных">
-      <div class="rule-row rule-row--head" role="row"><span>Параметр</span><span>Winline</span><span>Polymarket</span><span>Статус</span></div>
-      <div class="rule-row" role="row"><span>Команды</span><span>${escapeHtml(event.team1)} — ${escapeHtml(event.team2)}</span><span>${escapeHtml(candidate.question)}</span><span class="rule-status is-ok">Связаны в demo</span></div>
-      <div class="rule-row" role="row"><span>Время начала</span><span>${escapeHtml(event.dateLabel)}</span><span>${escapeHtml(event.dateLabel)}</span><span class="rule-status">${candidate.timeDelta ? `Δ ${candidate.timeDelta} мин.` : "Совпадает"}</span></div>
-      <div class="rule-row" role="row"><span>Формат рынка</span><span>${escapeHtml(event.lineType)}</span><span>Победитель матча</span><span class="rule-status">Демо</span></div>
-      <div class="rule-row" role="row"><span>Источник</span><span>Локальный snapshot</span><span>Локальный snapshot</span><span class="rule-status is-ok">Без API</span></div>
-      <div class="rule-row" role="row"><span>Комиссии</span><span>${(state.winlineFee * 100).toLocaleString("ru-RU")}%</span><span>${(state.polymarketFee * 100).toLocaleString("ru-RU")}% + demo-конвертация</span><span class="rule-status">Допущения</span></div>
-      <div class="rule-row" role="row"><span>Правила</span><span>Вымышленный сценарий</span><span>Вымышленный сценарий</span><span class="rule-status ${candidate.rulesConfirmed ? "is-ok" : "is-warn"}">${candidate.rulesConfirmed ? "Совпали" : "Проверить"}</span></div>
+    <div class="rules-explainer">
+      <div class="rules-summary">
+        <span>Как читать проверку</span>
+        <h3>Зелёное задано в демонстрационном сценарии. Жёлтое в реальном сервисе нужно сверить на обеих площадках.</h3>
+      </div>
+      <div class="rule-grid" role="list" aria-label="Что проверено для этой демо-пары">
+        <article class="plain-rule is-ok" role="listitem">
+          <i>✓</i><div><span>Участники</span><strong>Одни и те же команды или игроки</strong><p>${escapeHtml(event.team1)} — ${escapeHtml(event.team2)}</p></div>
+        </article>
+        <article class="plain-rule ${candidate.timeDelta ? "is-warn" : "is-ok"}" role="listitem">
+          <i>${candidate.timeDelta ? "!" : "✓"}</i><div><span>Начало события</span><strong>${candidate.timeDelta ? `Разница ${candidate.timeDelta} минут` : "Время совпало"}</strong><p>В публичном демо используется локальная временная метка: ${escapeHtml(event.dateLabel)}.</p></div>
+        </article>
+        <article class="plain-rule is-ok" role="listitem">
+          <i>✓</i><div><span>Что считается победой</span><strong>Два противоположных исхода</strong><p>${escapeHtml(event.lineType)} · ${escapeHtml(candidate.marketType)}.</p></div>
+        </article>
+        <article class="plain-rule ${rulesMatch ? "is-ok" : "is-warn"}" role="listitem">
+          <i>${rulesMatch ? "✓" : "!"}</i><div><span>Овертайм и дополнительные раунды</span><strong>${rulesMatch ? "В демо считаются одинаково" : "В реальном сервисе проверить вручную"}</strong><p>Публичная версия не получает официальные правила рынков.</p></div>
+        </article>
+        <article class="plain-rule ${rulesMatch ? "is-ok" : "is-warn"}" role="listitem">
+          <i>${rulesMatch ? "✓" : "!"}</i><div><span>Отмена или перенос</span><strong>${rulesMatch ? "В демо возврат одинаковый" : "В реальном сервисе проверить вручную"}</strong><p>Площадки могут по-разному вернуть деньги или засчитать результат.</p></div>
+        </article>
+        <article class="plain-rule is-info" role="listitem">
+          <i>i</i><div><span>Источник цен</span><strong>Вымышленный локальный снимок</strong><p>Сетевых запросов, API-ключей и production-коннекторов в репозитории нет.</p></div>
+        </article>
+        <article class="plain-rule is-info" role="listitem">
+          <i>₽</i><div><span>Расходы</span><strong>Учтены в чистом результате</strong><p>Демо-курс 1 USDC = ${state.rubPerUsdc.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} ₽ · конвертация ${(state.conversionFee * 100).toLocaleString("ru-RU", { maximumFractionDigits: 2 })}%.</p></div>
+        </article>
+        <article class="plain-rule is-info" role="listitem">
+          <i>%</i><div><span>Защитный запас</span><strong>${(state.safetyBuffer * 100).toLocaleString("ru-RU", { maximumFractionDigits: 2 })}% сверх расходов</strong><p>Меньший плюс считаем недостаточным: реальная цена может измениться между действиями.</p></div>
+        </article>
+      </div>
+      <details class="rules-tech">
+        <summary>Показать технические данные демо</summary>
+        <dl>
+          <div><dt>Формат Winline</dt><dd>${escapeHtml(event.lineType)}</dd></div>
+          <div><dt>Формат Polymarket</dt><dd>${escapeHtml(candidate.marketType)}</dd></div>
+          <div><dt>Минимальный ордер</dt><dd>${formatMoney(state.polymarketMinOrderUsdc, "USDC")}</dd></div>
+          <div><dt>Округление Winline</dt><dd>${formatMoney(state.bookmakerRoundingRub, "RUB")}</dd></div>
+        </dl>
+      </details>
     </div>`;
 }
 
@@ -641,6 +859,7 @@ function selectStep(step, id) {
 
 function setActiveView(view, scroll = true) {
   state.activeView = view;
+  if (view === "watch") renderWatch();
   document.querySelectorAll("[data-view]").forEach(node => { node.hidden = node.dataset.view !== view; });
   document.querySelectorAll("[data-nav]").forEach(button => button.classList.toggle("is-active", button.dataset.nav === view));
   if (scroll) document.querySelector("#main-content").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -729,6 +948,14 @@ document.addEventListener("click", event => {
   const opportunity = event.target.closest("[data-open-opportunity]");
   if (opportunity) openOpportunity(opportunity.dataset.openOpportunity);
 
+  const watchOpportunity = event.target.closest("[data-watch-opportunity]");
+  if (watchOpportunity) toggleWatchById(watchOpportunity.dataset.watchOpportunity);
+
+  if (event.target.closest("[data-watch-current]")) toggleCurrentWatch();
+
+  const unwatch = event.target.closest("[data-unwatch]");
+  if (unwatch) toggleWatchById(unwatch.dataset.unwatch);
+
   const filter = event.target.closest("[data-feed-filter]");
   if (filter) {
     state.feedFilter = filter.dataset.feedFilter;
@@ -744,11 +971,10 @@ document.addEventListener("click", event => {
     updateEconomyUi();
     if (typeof el.economyDialog.showModal === "function") el.economyDialog.showModal();
   }
-});
 
-document.querySelectorAll("[data-nav]").forEach(button => {
-  button.addEventListener("click", () => {
-    if (button.dataset.nav === "finder") {
+  const navigation = event.target.closest("[data-nav]");
+  if (navigation) {
+    if (navigation.dataset.nav === "finder") {
       state.sport = null;
       state.league = null;
       state.event = null;
@@ -757,8 +983,8 @@ document.querySelectorAll("[data-nav]").forEach(button => {
       renderSource();
       renderTarget();
     }
-    setActiveView(button.dataset.nav);
-  });
+    setActiveView(navigation.dataset.nav);
+  }
 });
 
 document.querySelector("[data-brand-nav]").addEventListener("click", event => {
@@ -768,8 +994,10 @@ document.querySelector("[data-brand-nav]").addEventListener("click", event => {
 
 document.querySelector("#refresh-match").addEventListener("click", () => showToast("Публичное демо использует локальный snapshot. Сетевых обновлений нет."));
 document.querySelector("#refresh-opportunities").addEventListener("click", () => {
+  el.refreshOpportunitiesLabel.textContent = "Пересчитываем…";
   renderOpportunities();
   showToast("Демо-расчёты пересчитаны локально");
+  window.setTimeout(() => { el.refreshOpportunitiesLabel.textContent = "Пересчитать демо"; }, 500);
 });
 
 el.opportunitySport.addEventListener("change", event => {
@@ -799,6 +1027,8 @@ document.querySelector("#build-position").addEventListener("click", () => {
   if (typeof el.dialog.showModal === "function") el.dialog.showModal();
 });
 
+el.watchToggle.addEventListener("click", toggleCurrentWatch);
+
 document.querySelectorAll("[data-economy-field]").forEach(control => {
   control.addEventListener("input", event => {
     const key = event.target.dataset.economyField;
@@ -825,9 +1055,11 @@ document.querySelector("#sync-time").textContent = "локальный snapshot 
 document.querySelector("#dialog-winline-link").href = "https://winline.ru";
 document.querySelector("#dialog-poly-link").href = "https://polymarket.com";
 
+loadWatchIds();
 syncEconomyControls();
 updateEconomyUi();
 renderSource();
 renderTarget();
 renderOpportunities();
+renderWatch();
 setActiveView("opportunities", false);
